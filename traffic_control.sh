@@ -72,7 +72,7 @@ root_checker(){
 
 #Check if the --help flag is passed as an arguement
 help_checker(){
-    if [[ $1 = "--help" ]
+    if [[ $1 = "--help" ]]
         then
             echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
         else
