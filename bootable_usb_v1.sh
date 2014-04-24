@@ -1,25 +1,13 @@
-################################################
-#Author: Matt Iannuzzi...YAAAAA BOYYYYYYYYYYYYY#
-#v2.2                                          #
-#                                              #
-################################################
-<<<<<<< HEAD
-=======
-STR = HELLO WORLD!
-echo $STR
-
-
-
->>>>>>> bd511f36cd33bb80bdca117e79e9bb5fbcaaed5b
+#Author: Matt Iannuzzi...YAAAAA BOYYYYYYYYYYYYY
+#v2.2
+#~/bin
 
 #Initial option select, format disk or proceed
 echo $'Select an option and press "enter":\n1) Format USB \n2) USB Already Formatted, proceed'
 read initial_answer
 
 case "$initial_answer" in
-##################################################################################
-#CASE 1***FORMAT DRIVE, THEN PROMPT TO CONVERT OR NOT, THEN PROMPT TO BURN OR NOT#
-##################################################################################
+#CASE 1***FORMAT DRIVE
     1) 
 #Display a lists of available disks
         diskutil list
@@ -51,16 +39,13 @@ case "$initial_answer" in
         1)
 #Convert ISO to IMG using HDIUTIL
             hdiutil convert -format UDRW -o $1 $2
-#Prompt to ensure user wants to burn to disk            
             echo "Would you now like to burn your IMG to disk$disk_number? (y/n)"
             read burn_answer
                 case "$burn_answer" in
-                y)        
-#If yes, burn to desired disk                
+                y)                
                     echo $'********************************\n*Hal will now copy .img to USB...\n********************************'
                     sudo dd if=$1.dmg of=/dev/rdisk$disk_number bs=1m
                 ;;
-#If no, exit the program                
                 n) echo "You have not entered a valid selection, program will now terminate."
                    exit 0
                 ;;
@@ -68,17 +53,15 @@ case "$initial_answer" in
                    exit 0
                 esac
         ;; 
-#No to converting, prompt if user is ready to burn        
+        
         2) 
             echo "Would you now like to burn your IMG to disk$disk_number? (y/n)"
             read burn_answer
                 case "$burn_answer" in
-#If yes, burn to disk                
                 y)                
                     echo $'********************************\n*Hal will now copy .img to USB...\n********************************'
                     sudo dd if=$1 of=/dev/rdisk$disk_number bs=1m
                 ;;
-#If no, exit the program                
                 n) echo "You have not entered a valid selection, program will now terminate."
                    exit 0
                 ;;
@@ -91,9 +74,7 @@ case "$initial_answer" in
 		
         esac
     ;;
-#######################################################################################
-#CASE 2***DONT FORMAT DRIVE, THEN PROMPT TO CONVERT OR NOT, THEN PROMPT TO BURN OR NOT#
-#######################################################################################
+
     2)
         #Display a lists of available disks
         diskutil list
