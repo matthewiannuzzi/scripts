@@ -1,13 +1,5 @@
 #!/bin/bash
-
-#if [[ -z $1 || -z $2 || -z $3 || -z $4 ]]
-#then
-#    echo "Invalid arguements..."
-#    echo "Run script as ./tc_delay.sh [interface] [ipaddress] [subnet mask] [delay]"
-if [[ $1 = "--help" ]]
-then
-    echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
-else
+#v2.1- Added functions
 
 #Displays the main menu to prompt for delay addition or removal
 main_menu(){
@@ -68,10 +60,8 @@ remove_delay(){
 }
 
 
-
-
 #Check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
-
+root_checker(){
 ROOT_UID="0"
 if [ "$UID" -ne "$ROOT_UID" ] ; 
 
@@ -81,5 +71,16 @@ then
 else main_menu
 
 fi #end if statement for root check/display main menu
+}
 
+help_checker(){
+if [[ $1 = "--help" ]]
+then
+    echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
+else
+    root_checker 
 fi #end if statement for --help checker
+}
+
+help_checker
+
