@@ -1,6 +1,7 @@
 #!/bin/bash
 #v2.1- Added functions
 
+help=$1
 #Displays the main menu to prompt for delay addition or removal
 main_menu(){
     echo "******************************************************"
@@ -52,7 +53,7 @@ remove_delay(){
     read interface
 
     echo "*********************************************************"
-    echo "Please wait, removing ANY delay interface $interface"
+    echo "Please wait, removing ANY delay on $interface"
     echo "*********************************************************"
 
     tc qdisc del dev $interface root
@@ -72,7 +73,7 @@ root_checker(){
 
 #Check if the --help flag is passed as an arguement
 help_checker(){
-    if [[ $1 = "--help" ]]
+    if [[ $help == '--help' ]] 
         then
             echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
         else
