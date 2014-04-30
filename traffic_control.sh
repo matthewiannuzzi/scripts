@@ -1,9 +1,17 @@
 #!/bin/bash
-#v2.2- Added logging
+#v2.3- Added logging & root check improvements
+
 
 help=$1
 log_path=/var/log/traffic_control_log.txt
-pre_date="/usr/bin/pre_date.sh"
+
+#accept stdin and echo with date: stdin
+predate(){
+    while read line
+    do
+        echo $(date) ":" $line;
+    done
+}
 
 #Displays the main menu to prompt for delay addition/removal
 main_menu(){
@@ -30,23 +38,22 @@ main_menu(){
 
 #Gathers the interface, IP address, subnet, and delay and adds the delay respectively
 add_delay(){
-    echo "Please enter interface..."
+    echo "Enter interface..."
     read interface
-    echo "Please enter IP address..."
+    echo "Enter IP address..."
     read ipaddress
-    echo "Please enter subnet cidr without '/'..."
+    echo "Enter subnet cidr without '/'..."
     read subnet
-    echo "Please enter delay [ms]..."
+    echo "Enter desired delay [ms]..."
     read delay
     echo "*********************************************************"
     echo "Please wait, adding ${delay}ms delay to $ipaddress/$subnet on interface $interface"
     echo "*********************************************************"
+    tc qdisc del dev $interface root 2>&1 | predate >> $log_path
 
-    tc qdisc del dev $interface root 2>&1 | $pre_date >> $log_path
+    tc qdisc add dev $interface root handle 1: prio 2>&1 | predate >> $log_path
 
-    tc qdisc add dev $interface root handle 1: prio 2>&1 | $pre_date >> $log_path
-
-    tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress}/${subnet} flowid 2:1 2>&1 | $pre_date >> $log_path
+    tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress}/${subnet} flowid 2:1 2>&1 | predate >> $log_path
     
     lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms 2>&1) 
     #Check if the previous command succeeded
@@ -61,7 +68,7 @@ add_delay(){
         echo ""
     fi
     #Send errors from last command to log
-    echo $lastcommand | $pre_date >> $log_path
+    echo $lastcommand | predate >> $log_path
 }
 
 #Removes any delay that is on the given interface
@@ -88,30 +95,44 @@ remove_delay(){
         echo ""
     fi
     #Send errros from last command to log
-    echo $lastcommand | $pre_date >> $log_path
+    echo $lastcommand | predate >> $log_path
 }
 
 
 #Check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
-root_checker(){
-    ROOT_UID="0"
-    if [ "$UID" -ne "$ROOT_UID" ] ; 
-        then
-            echo "You must have root privileges to run this script..."
-            echo "`date` INVALID SUDO USER: `whoami`" >> $log_path
-        else main_menu
+# root_checker(){
+#     ROOT_UID="0"
+#     if [ "$UID" -ne "$ROOT_UID" ] ; 
+#         then
+#             echo "You must have root privileges to run this script..."
+#             echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
+#         else main_menu
 
-    fi #end if statement for root check/display main menu
-}
+#     fi #end if statement for root check/display main menu
+# }
+
 
 #Check if the --help flag is passed as an arguement
+#Then check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
 help_checker(){
     if [[ $help == '--help' ]] 
         then
+        #Display Help page
+            echo ""
             echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
+            echo ""
             echo "Log file: $log_path"
+            echo ""
         else
-            root_checker 
+        #Check for sudo user
+            if (( $(id -u) == 0 )); then
+                main_menu
+            else
+                echo "This script runs commands which require root privileges"
+                echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
+                exit 1
+            fi
+            # root_checker 
     fi #end if statement for help checker
 }
 
