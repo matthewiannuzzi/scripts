@@ -1,9 +1,9 @@
 #!/bin/bash
-#v2.3- Added logging & root check improvements
+#v2.5- Added logging & root check improvements
 
 
 help=$1
-log_path=/var/log/traffic_control_log.txt
+log_path=~/log.txt
 
 #accept stdin and echo with date: stdin
 predate(){
@@ -15,13 +15,13 @@ predate(){
 
 #Displays the main menu to prompt for delay addition/removal
 main_menu(){
-    echo "******************************************************"
+    echo "****************************************************************"
     echo "Select an option and press "enter":" 
     echo "1) Add delay to a network"
     echo "2) Remove delay from a network"
-    echo "******************************************************"
-    echo "Run script as ./traffic_control.sh --help for more information" 
-    echo "******************************************************"
+    echo "****************************************************************"
+    echo "*Run script as ./traffic_control.sh --help for more information*" 
+    echo "****************************************************************"
     read delay_answer
 
     case "$delay_answer" in
@@ -46,10 +46,19 @@ add_delay(){
     read subnet
     echo "Enter desired delay [ms]..."
     read delay
-    echo "*********************************************************"
-    echo "Please wait, adding ${delay}ms delay to $ipaddress/$subnet on interface $interface"
-    echo "*********************************************************"
-    tc qdisc del dev $interface root 2>&1 | predate >> $log_path
+     
+    tc qdisc list | grep netem >> /dev/null
+    if [[ $? -eq 0 ]];
+        then
+            tc qdisc del dev $interface root 2> predate >> $log_path
+            echo "Previous latency on interface $interface has been removed."
+        else 
+            echo "No previous latency on interface $interface detected"
+    fi
+
+    echo "************************************************************************************"
+    echo "*Please wait, adding ${delay}ms delay to $ipaddress/$subnet on interface $interface*"
+    echo "************************************************************************************"
 
     tc qdisc add dev $interface root handle 1: prio 2>&1 | predate >> $log_path
 
@@ -63,12 +72,12 @@ add_delay(){
         echo "Delay of ${delay}ms has successfully been added to $ipaddress/$subnet on interface $interface"
         echo ""
     else
+        #Send errors from last command to log
+        echo $lastcommand | predate >> $log_path
         echo ""
         echo "Delay failed. Please see $log_path for more information."
         echo ""
     fi
-    #Send errors from last command to log
-    echo $lastcommand | predate >> $log_path
 }
 
 #Removes any delay that is on the given interface
@@ -90,12 +99,13 @@ remove_delay(){
         echo "All delay has been removed from interface $interface"
         echo ""
     else
+
+    	#Send errros from last command to log
+    	echo $lastcommand | predate >> $log_path
         echo ""
         echo "Removal of delay on interface $interface failed. Please see $log_path for more information."
         echo ""
     fi
-    #Send errros from last command to log
-    echo $lastcommand | predate >> $log_path
 }
 
 
