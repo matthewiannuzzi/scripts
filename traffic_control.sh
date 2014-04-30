@@ -2,8 +2,8 @@
 #v2.2- Added logging
 
 help=$1
-log_path=~/scripts/traffic_control_log.txt
-pre_date="./predate.sh"
+log_path=/var/log/traffic_control_log.txt
+pre_date="/usr/bin/pre_date.sh"
 
 #Displays the main menu to prompt for delay addition/removal
 main_menu(){
