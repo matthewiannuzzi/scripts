@@ -1,5 +1,5 @@
 #!/bin/bash
-#v2.5- Added logging & root check improvements
+#v2.6- Added function to display any current latency
 
 
 help=$1
@@ -117,10 +117,11 @@ display_latency(){
 
     if [[ $newcom == *netem* ]];
     then
-        echo "Latency has been detected"
+        echo "***************************"
+        echo "*Latency has been detected*"
+        echo "***************************"
         tc qdisc list | grep netem
     else
-        echo $newcom | predate
         echo "No latency has been detected on your interfaces. Run 'tc qdisc list' for more information"
     fi
 }
