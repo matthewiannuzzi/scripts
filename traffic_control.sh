@@ -3,13 +3,13 @@
 
 
 help=$1
-log_path=~/log.txt
+log_path=~/scripts/log.txt
 
 #accept stdin and echo with date: stdin
 predate(){
     while read line
     do
-        echo $(date) ":" $line;
+        echo $(date) ":" $line >>$log_path
     done
 }
 
@@ -19,6 +19,7 @@ main_menu(){
     echo "Select an option and press "enter":" 
     echo "1) Add delay to a network"
     echo "2) Remove delay from a network"
+    echo "3) Display existing latency"
     echo "****************************************************************"
     echo "*Run script as ./traffic_control.sh --help for more information*" 
     echo "****************************************************************"
@@ -28,6 +29,8 @@ main_menu(){
         1) add_delay
         ;;
         2) remove_delay
+        ;;
+        3) display_latency
         ;;
         *) echo""
            echo "Please enter a valid option..."
@@ -50,7 +53,7 @@ add_delay(){
     tc qdisc list | grep netem >> /dev/null
     if [[ $? -eq 0 ]];
         then
-            tc qdisc del dev $interface root 2> predate >> $log_path
+            tc qdisc del dev $interface root 2>&1 | predate #>> $log_path
             echo "Previous latency on interface $interface has been removed."
         else 
             echo "No previous latency on interface $interface detected"
@@ -60,9 +63,9 @@ add_delay(){
     echo "*Please wait, adding ${delay}ms delay to $ipaddress/$subnet on interface $interface*"
     echo "************************************************************************************"
 
-    tc qdisc add dev $interface root handle 1: prio 2>&1 | predate >> $log_path
+    tc qdisc add dev $interface root handle 1: prio 2>&1 | predate #>> $log_path
 
-    tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress}/${subnet} flowid 2:1 2>&1 | predate >> $log_path
+    tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress}/${subnet} flowid 2:1 2>&1 | predate #>> $log_path
     
     lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms 2>&1) 
     #Check if the previous command succeeded
@@ -73,7 +76,7 @@ add_delay(){
         echo ""
     else
         #Send errors from last command to log
-        echo $lastcommand | predate >> $log_path
+        echo $lastcommand | predate #>> $log_path
         echo ""
         echo "Delay failed. Please see $log_path for more information."
         echo ""
@@ -84,7 +87,6 @@ add_delay(){
 remove_delay(){
     echo "Please enter interface..."
     read interface
-
     echo "*********************************************************"
     echo "Please wait, removing ANY delay on $interface"
     echo "*********************************************************"
@@ -101,10 +103,25 @@ remove_delay(){
     else
 
     	#Send errros from last command to log
-    	echo $lastcommand | predate >> $log_path
+    	echo $lastcommand | predate #>> $log_path
         echo ""
         echo "Removal of delay on interface $interface failed. Please see $log_path for more information."
         echo ""
+    fi
+}
+
+#Display any existing latency on any interfaces
+display_latency(){
+
+    newcom=$(tc qdisc list 2>&1)
+
+    if [[ $newcom == *netem* ]];
+    then
+        echo "Latency has been detected"
+        tc qdisc list | grep netem
+    else
+        echo $newcom | predate
+        echo "No latency has been detected on your interfaces. Run 'tc qdisc list' for more information"
     fi
 }
 
