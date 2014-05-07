@@ -1,6 +1,8 @@
-#Author: Matt Iannuzzi...YAAAAA BOYYYYYYYYYYYYY
+#!/bin/bash
+
+#Author: Matt Iannuzzi
 #v2.2
-#~/bin
+
 
 #Initial option select, format disk or proceed
 echo $'Select an option and press "enter":\n1) Format USB \n2) USB Already Formatted, proceed'

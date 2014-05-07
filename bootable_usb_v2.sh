@@ -1,5 +1,6 @@
+#!/bin/bash
 ################################################
-#Author: Matt Iannuzzi...YAAAAA BOYYYYYYYYYYYYY#
+#Author: Matt Iannuzzi                         #
 #v2.2                                          #
 #                                              #
 ################################################
