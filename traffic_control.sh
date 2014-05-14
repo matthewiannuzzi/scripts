@@ -3,7 +3,7 @@
 
 
 help=$1
-log_path=~/scripts/log.txt
+log_path=/var/log/traffic_control_log.txt
 
 #accept stdin and echo with date: stdin
 predate(){
@@ -49,6 +49,8 @@ add_delay(){
     read subnet
     echo "Enter desired delay [ms]..."
     read delay
+    echo "Enter desired packet loss[%].."
+    read loss
      
     tc qdisc list | grep netem >> /dev/null
     if [[ $? -eq 0 ]];
@@ -67,7 +69,7 @@ add_delay(){
 
     tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress}/${subnet} flowid 2:1 2>&1 | predate #>> $log_path
     
-    lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms 2>&1) 
+    lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms loss ${loss} 2>&1) 
     #Check if the previous command succeeded
     if [[ $? -eq 0 ]]; 
     then
