@@ -1,5 +1,5 @@
 #!/bin/bash
-#v2.6- Added function to display any current latency
+#v2.7- Added ability to set a range for delay
 
 
 help=$1
@@ -41,13 +41,11 @@ main_menu(){
 
 #Gathers the interface, IP address, subnet, and delay and adds the delay respectively
 add_delay(){
-    echo "Enter interface..."
+    echo "Enter interface [ethX]..."
     read interface
-    echo "Enter IP address..."
+    echo "Enter IP address or Network ID/subnet cidr [192.168.1.1/24]..."
     read ipaddress
-    echo "Enter subnet cidr without '/'..."
-    read subnet
-    echo "Enter desired delay [ms]..."
+    echo "Enter desired delay [ms] or delay range [ms] [ms] *With a space*..."
     read delay
     echo "Enter desired packet loss[%].."
     read loss
@@ -55,7 +53,7 @@ add_delay(){
     tc qdisc list | grep netem >> /dev/null
     if [[ $? -eq 0 ]];
         then
-            tc qdisc del dev $interface root 2>&1 | predate #>> $log_path
+            tc qdisc del dev $interface root 2>&1 | predate
             echo "Previous latency on interface $interface has been removed."
         else 
             echo "No previous latency on interface $interface detected"
@@ -65,23 +63,44 @@ add_delay(){
     echo "*Please wait, adding ${delay}ms delay to $ipaddress/$subnet on interface $interface*"
     echo "************************************************************************************"
 
-    tc qdisc add dev $interface root handle 1: prio 2>&1 | predate #>> $log_path
+    tc qdisc add dev $interface root handle 1: prio 2>&1 | predate
 
-    tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress}/${subnet} flowid 2:1 2>&1 | predate #>> $log_path
+    tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress} flowid 2:1 2>&1 | predate
     
-    lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms loss ${loss} 2>&1) 
-    #Check if the previous command succeeded
-    if [[ $? -eq 0 ]]; 
-    then
-        echo ""
-        echo "Delay of ${delay}ms has successfully been added to $ipaddress/$subnet on interface $interface"
-        echo ""
-    else
-        #Send errors from last command to log
-        echo $lastcommand | predate #>> $log_path
-        echo ""
-        echo "Delay failed. Please see $log_path for more information."
-        echo ""
+    if [[ $delay =~ [[:space:]] ]]
+        then 
+            first=$(echo $delay | cut -d \  -f 1)
+            second=$(echo $delay | cut -d \  -f 2)
+            
+            lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${first}ms ${second}ms loss ${loss} 2>&1)
+                #Check if the previous command succeeded
+                if [[ $? -eq 0 ]]; 
+                then
+                    echo ""
+                    echo "Delay of ${first}ms ${second}ms with a loss of ${loss}% has successfully been added to $ipaddress/$subnet on interface $interface"
+                    echo ""
+                else
+                    #Send errors from last command to log
+                    echo $lastcommand | predate
+                    echo ""
+                    echo "Delay failed. Please see $log_path for more information."
+                    echo ""
+                fi
+        else
+            lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms loss ${loss} 2>&1)
+                #Check if the previous command succeeded
+                if [[ $? -eq 0 ]]; 
+                then
+                    echo ""
+                    echo "Delay of ${delay}ms with a loss of ${loss}% has successfully been added to $ipaddress/$subnet on interface $interface"
+                    echo ""
+                else
+                    #Send errors from last command to log
+                    echo $lastcommand | predate
+                    echo ""
+                    echo "Delay failed. Please see $log_path for more information."
+                    echo ""
+                fi
     fi
 }
 
@@ -127,20 +146,6 @@ display_latency(){
         echo "No latency has been detected on your interfaces. Run 'tc qdisc list' for more information"
     fi
 }
-
-
-#Check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
-# root_checker(){
-#     ROOT_UID="0"
-#     if [ "$UID" -ne "$ROOT_UID" ] ; 
-#         then
-#             echo "You must have root privileges to run this script..."
-#             echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
-#         else main_menu
-
-#     fi #end if statement for root check/display main menu
-# }
-
 
 #Check if the --help flag is passed as an arguement
 #Then check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
