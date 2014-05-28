@@ -1,5 +1,5 @@
 #!/bin/bash
-#v2.7- Added ability to set a range for delay
+#v2.8- Code clean up
 
 
 help=$1
@@ -60,7 +60,7 @@ add_delay(){
     fi
 
     echo "************************************************************************************"
-    echo "*Please wait, adding ${delay}ms delay to $ipaddress/$subnet on interface $interface*"
+    echo "*Please wait, adding ${delay}ms delay to $ipaddress on interface $interface        *"
     echo "************************************************************************************"
 
     tc qdisc add dev $interface root handle 1: prio 2>&1 | predate
@@ -77,7 +77,7 @@ add_delay(){
                 if [[ $? -eq 0 ]]; 
                 then
                     echo ""
-                    echo "Delay of ${first}ms ${second}ms with a loss of ${loss}% has successfully been added to $ipaddress/$subnet on interface $interface"
+                    echo "Delay of ${first}ms ${second}ms with a loss of ${loss}% has successfully been added to $ipaddress on interface $interface"
                     echo ""
                 else
                     #Send errors from last command to log
@@ -92,7 +92,7 @@ add_delay(){
                 if [[ $? -eq 0 ]]; 
                 then
                     echo ""
-                    echo "Delay of ${delay}ms with a loss of ${loss}% has successfully been added to $ipaddress/$subnet on interface $interface"
+                    echo "Delay of ${delay}ms with a loss of ${loss}% has successfully been added to $ipaddress on interface $interface"
                     echo ""
                 else
                     #Send errors from last command to log
