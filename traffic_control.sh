@@ -24,7 +24,7 @@ main_menu(){
     echo "*Run script as ./traffic_control.sh --help for more information*" 
     echo "****************************************************************"
     read delay_answer
-
+    echo "****************************************************************"
     case "$delay_answer" in
         1) add_delay
         ;;
@@ -104,9 +104,32 @@ add_delay(){
     fi
 }
 
+#Display any existing latency on any interfaces
+display_latency(){
+
+    newcommand=$(tc qdisc list 2>&1)
+
+    if [[ $newcommand == *netem* ]];
+    then
+        echo "***************************"
+        echo "*Latency has been detected*"
+        echo "***************************"
+        tc qdisc list | grep netem
+    else
+        echo "No latency has been detected on your interfaces. Run 'tc qdisc list' for more information"
+    fi
+}
+
 #Removes any delay that is on the given interface
 remove_delay(){
-    echo "Please enter interface..."
+
+    var=$(display_latency)
+    
+    if [[ $var == *No* ]];
+    then
+        echo "No latency has been detected to remove from any of your interfaces"
+    else
+    echo "Enter interface [ethX]..."
     read interface
     echo "*********************************************************"
     echo "Please wait, removing ANY delay on $interface"
@@ -116,35 +139,21 @@ remove_delay(){
     lastcommand=$(tc qdisc del dev $interface root 2>&1)
     
     #Check if the previous command succeeded
-    if [[ $? -eq 0 ]]; 
-    then
-        echo ""
-        echo "All delay has been removed from interface $interface"
-        echo ""
-    else
+            if [[ $? -eq 0 ]]; 
+            then
+                echo ""
+                echo "All delay has been removed from interface $interface"
+                echo ""
+            else
 
-    	#Send errros from last command to log
-    	echo $lastcommand | predate #>> $log_path
-        echo ""
-        echo "Removal of delay on interface $interface failed. Please see $log_path for more information."
-        echo ""
+                #Send errros from last command to log
+                echo $lastcommand | predate #>> $log_path
+                echo ""
+                echo "Removal of delay on interface $interface failed. Please see $log_path for more information."
+                echo ""
+            fi
     fi
-}
 
-#Display any existing latency on any interfaces
-display_latency(){
-
-    newcom=$(tc qdisc list 2>&1)
-
-    if [[ $newcom == *netem* ]];
-    then
-        echo "***************************"
-        echo "*Latency has been detected*"
-        echo "***************************"
-        tc qdisc list | grep netem
-    else
-        echo "No latency has been detected on your interfaces. Run 'tc qdisc list' for more information"
-    fi
 }
 
 #Check if the --help flag is passed as an arguement
