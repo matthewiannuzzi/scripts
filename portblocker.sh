@@ -1,5 +1,5 @@
 #!/bin/bash
-#v1.0
+#v1.2- added blocking for destination & source ports
 
 help=$1
 
@@ -44,13 +44,18 @@ block_gcm(){
 
 	case "$answer" in
 		1) iptables -t nat -A PREROUTING -p tcp -i br1 --dport 5228 -j DNAT --to-destination 192.168.199.3:3129
+		   iptables -t nat -A PREROUTING -p tcp -i br1 --sport 5228 -j DNAT --to-destination 192.168.199.3:3129
 		;;
 		2) 
 			echo "Enter IP address or Network address"
 			read ipaddress
 			iptables -t nat -A PREROUTING -i br1 -p tcp -s ${ipaddress} --dport 5228 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -i br1 -p tcp -s ${ipaddress} --sport 5228 -j REDIRECT --to 9999
 		;;
-		*) block_gcm
+		*) 
+			echo""
+            echo "Please enter a valid option..."
+			block_gcm
 		;;
 	esac
 }
@@ -65,13 +70,18 @@ unblock_gcm(){
 	case "$answer" in
 		1) 
 		   iptables -t nat -D PREROUTING -p tcp -i br1 --dport 5228 -j DNAT --to-destination 192.168.199.3:3129
+		   iptables -t nat -D PREROUTING -p tcp -i br1 --sport 5228 -j DNAT --to-destination 192.168.199.3:3129
 		;;
 		2) 	
-			echo "Enter IP address or Network address"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/24]"
 			read ipaddress
 			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --dport 5228 -j REDIRECT --to 9999
+			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --sport 5228 -j REDIRECT --to 9999
 		;;
-		*) unblock_gcm
+		*) 
+			echo""
+            echo "Please enter a valid option..."
+			unblock_gcm
 		;;
 	esac
 
@@ -89,15 +99,20 @@ block_specific(){
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
 			iptables -t nat -A PREROUTING -p tcp -i br1 --dport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
+			iptables -t nat -A PREROUTING -p tcp -i br1 --sport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
 		;;
 		2) 
-			echo "Enter IP address or Network address"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/24]"
 			read ipaddress
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
 			iptables -t nat -A PREROUTING -i br1 -p tcp -s ${ipaddress} --dport ${port_number} -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -i br1 -p tcp -s ${ipaddress} --sport ${port_number} -j REDIRECT --to 9999
 		;;
-		*) block_specific
+		*) 
+			echo""
+            echo "Please enter a valid option..."
+			block_specific
 		;;
 	esac
 	
@@ -115,15 +130,20 @@ unblock_specific(){
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
 			iptables -t nat -D PREROUTING -p tcp -i br1 --dport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
+			iptables -t nat -D PREROUTING -p tcp -i br1 --sport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
 		;;
 		2) 
-			echo "Enter IP address or Network address"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/24]"
 			read ipaddress
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
 			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --dport ${port_number} -j REDIRECT --to 9999
+			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --sport ${port_number} -j REDIRECT --to 9999
 		;;
-		*) unblock_specific
+		*) 
+			echo""
+            echo "Please enter a valid option..."
+			unblock_specific
 		;;
 	esac
 
