@@ -1,5 +1,5 @@
 #!/bin/bash
-#v1.2- added blocking for destination & source ports
+#v1.3- code clean up and improved port blocking
 
 help=$1
 
@@ -39,18 +39,39 @@ main_menu(){
 block_gcm(){
 	echo "Select an option and press "enter":"
 	echo "1) Block ALL networks"
-	echo "2) Block specific network"
+	echo "2) Block specific network [Recommended]"
 	read answer
 
 	case "$answer" in
-		1) iptables -t nat -A PREROUTING -p tcp -i br1 --dport 5228 -j DNAT --to-destination 192.168.199.3:3129
-		   iptables -t nat -A PREROUTING -p tcp -i br1 --sport 5228 -j DNAT --to-destination 192.168.199.3:3129
+		1)  
+			echo "*******************"
+			echo "***** WARNING *****"
+			echo "*******************"
+			echo "Proceed only if you are sure you know which ports you are blocking on which networks. Press ctrl+c to cancel."
+			echo "*******************"
+			echo "Are you sure you want to proceed blocking ports 5228 - 5230 on ALL networks? (y/n)"
+			read answer
+			if [ $answer == 'y' ]
+				then
+				   iptables -t nat -A PREROUTING -p tcp -i br1 --dport 5228 -j DNAT --to-destination 192.168.199.3:3129
+				   iptables -t nat -A PREROUTING -p tcp -i br1 --sport 5228 -j DNAT --to-destination 192.168.199.3:3129
+				   iptables -t nat -A PREROUTING -p tcp -i br1 --dport 5229 -j DNAT --to-destination 192.168.199.3:3129
+				   iptables -t nat -A PREROUTING -p tcp -i br1 --sport 5229 -j DNAT --to-destination 192.168.199.3:3129
+				   iptables -t nat -A PREROUTING -p tcp -i br1 --dport 5230 -j DNAT --to-destination 192.168.199.3:3129
+				   iptables -t nat -A PREROUTING -p tcp -i br1 --sport 5230 -j DNAT --to-destination 192.168.199.3:3129
+				else
+					main_menu
+			fi
 		;;
 		2) 
-			echo "Enter IP address or Network address"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/22]"
 			read ipaddress
-			iptables -t nat -A PREROUTING -i br1 -p tcp -s ${ipaddress} --dport 5228 -j REDIRECT --to 9999
-			iptables -t nat -A PREROUTING -i br1 -p tcp -s ${ipaddress} --sport 5228 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -p tcp -i br1 -s ${ipaddress} --dport 5228 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -p tcp -i br1 -s ${ipaddress} --sport 5228 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -p tcp -i br1 -s ${ipaddress} --dport 5229 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -p tcp -i br1 -s ${ipaddress} --sport 5229 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -p tcp -i br1 -s ${ipaddress} --dport 5230 -j REDIRECT --to 9999
+			iptables -t nat -A PREROUTING -p tcp -i br1 -s ${ipaddress} --sport 5230 -j REDIRECT --to 9999
 		;;
 		*) 
 			echo""
@@ -71,12 +92,20 @@ unblock_gcm(){
 		1) 
 		   iptables -t nat -D PREROUTING -p tcp -i br1 --dport 5228 -j DNAT --to-destination 192.168.199.3:3129
 		   iptables -t nat -D PREROUTING -p tcp -i br1 --sport 5228 -j DNAT --to-destination 192.168.199.3:3129
+		   iptables -t nat -D PREROUTING -p tcp -i br1 --dport 5229 -j DNAT --to-destination 192.168.199.3:3129
+		   iptables -t nat -D PREROUTING -p tcp -i br1 --sport 5229 -j DNAT --to-destination 192.168.199.3:3129
+		   iptables -t nat -D PREROUTING -p tcp -i br1 --dport 5230 -j DNAT --to-destination 192.168.199.3:3129
+		   iptables -t nat -D PREROUTING -p tcp -i br1 --sport 5230 -j DNAT --to-destination 192.168.199.3:3129
 		;;
 		2) 	
-			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/24]"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/22]"
 			read ipaddress
 			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --dport 5228 -j REDIRECT --to 9999
 			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --sport 5228 -j REDIRECT --to 9999
+			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --dport 5229 -j REDIRECT --to 9999
+			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --sport 5229 -j REDIRECT --to 9999
+			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --dport 5230 -j REDIRECT --to 9999
+			iptables -t nat -D PREROUTING -i br1 -p tcp -s ${ipaddress} --sport 5230 -j REDIRECT --to 9999
 		;;
 		*) 
 			echo""
@@ -91,18 +120,30 @@ unblock_gcm(){
 block_specific(){
 	echo "Select an option and press "enter":"
 	echo "1) Block specific ports on ALL networks"
-	echo "2) Block specific ports on a specific network"
+	echo "2) Block specific ports on a specific network [Recommended]"
 	read answer
 
 	case "$answer" in
 		1) 
+			echo "*******************"
+			echo "***** WARNING *****"
+			echo "*******************"
+			echo "Proceed only if you are sure you know which ports you are blocking on which networks. Press ctrl+c to cancel."
+			echo "*******************"
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
-			iptables -t nat -A PREROUTING -p tcp -i br1 --dport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
-			iptables -t nat -A PREROUTING -p tcp -i br1 --sport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
+			echo "Are you sure you want to proceed blocking port(s) $port_number on ALL networks? (y/n)"
+			read answer
+			if [ $answer == 'y' ]
+				then
+					iptables -t nat -A PREROUTING -p tcp -i br1 --dport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
+					iptables -t nat -A PREROUTING -p tcp -i br1 --sport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
+				else
+					main_menu
+			fi
 		;;
 		2) 
-			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/24]"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/22]"
 			read ipaddress
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
@@ -133,7 +174,7 @@ unblock_specific(){
 			iptables -t nat -D PREROUTING -p tcp -i br1 --sport ${port_number} -j DNAT --to-destination 192.168.199.3:3129
 		;;
 		2) 
-			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/24]"
+			echo "Enter IP address or Network address, include subnet cidr [testinglab = 192.168.200.0/22]"
 			read ipaddress
 			echo "Enter port number or port range i.e.- [5228] or [5228:5230]"
 			read port_number
@@ -174,9 +215,10 @@ help_checker(){
         then
         #Display Help page
         	echo ""
-            echo "**********************************************************************************************************************"
-            echo "* Run the script with no arguements to enter the main menu. Root privilege is required to block or unblock any ports *"
-            echo "**********************************************************************************************************************"
+            echo "***********************************************************************************************************************************************************"
+            echo "*                    Run the script with no arguements to enter the main menu. Root privilege is required to block or unblock any ports                   *"
+            echo "* It is highly recommended that you block only block ports on specfic testing networks and that the ports being blocked will not effect any other traffic *"
+            echo "***********************************************************************************************************************************************************"
         else
         	sudo_checker        
     fi #end if statement for help checker
