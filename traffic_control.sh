@@ -1,16 +1,14 @@
 #!/bin/bash
-#v3- Added ability to temporarily change the log path. Code & logic clean up
+#v3.1- Added ability to temporarily change the log path. Checker to make sure tc is installed. Code & logic clean up
 
 
 help=$1
 
 log_path=/var/log/traffic_control_log.txt
 
-
 #Check if the --help flag is passed as an arguement
-#Then check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
 help_checker(){
-    if [[ $help == '--help' || '-h' ]] 
+    if [[ $help == '--help' ]] 
         then
         #Display Help page
             echo ""
@@ -28,19 +26,33 @@ help_checker(){
             echo "Current log file: $log_path"
             echo ""
         else
-        #Check for sudo user
-        if (( $(id -u) == 0 )); 
+            sudo_checker
+    fi #end if statement for help checker
+}
+
+#Check for sudo user
+sudo_checker(){
+    if (( $(id -u) == 0 )); 
         then
-            log_checker
+            tc_checker
         else
             echo "This script runs commands which require root privileges"
             echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
             exit 1
-        fi
-         # root_checker
-            
-    fi #end if statement for help checker
+    fi
 }
+
+tc_checker(){
+    which tc
+    if [[ $? -eq 1 ]]
+        then
+            echo "You must have the 'tc' qutility installed on your machine to run this command"
+            echo "Run ./traffic_control --help for more information on how to install tc."
+        else
+            log_checker
+    fi
+}
+
 
 log_checker(){
     if [[ $help == '--change_log' ]]
@@ -211,7 +223,5 @@ remove_delay(){
     fi
 
 }
-
-
 
 help_checker
