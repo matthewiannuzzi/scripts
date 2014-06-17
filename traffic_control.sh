@@ -1,9 +1,61 @@
 #!/bin/bash
-#v2.8- Code clean up
+#v3- Added ability to temporarily change the log path. Code & logic clean up
 
 
 help=$1
+
 log_path=/var/log/traffic_control_log.txt
+
+
+#Check if the --help flag is passed as an arguement
+#Then check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
+help_checker(){
+    if [[ $help == '--help' || '-h' ]] 
+        then
+        #Display Help page
+            echo ""
+            echo ""
+            echo ""
+            echo "*************************** WARNING ******************************"
+            echo "************         Use at your own risk         ****************"
+            echo "******************************************************************"
+            echo ""
+            echo "This script requires the 'tc' utility to be installed."
+            echo "Run 'sudo apt-get install tc' to get tc installed on your machine."
+            echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
+            echo "Run with '--change_log' to temporarily change the log path file."
+            echo ""
+            echo "Current log file: $log_path"
+            echo ""
+        else
+        #Check for sudo user
+        if (( $(id -u) == 0 )); 
+        then
+            log_checker
+        else
+            echo "This script runs commands which require root privileges"
+            echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
+            exit 1
+        fi
+         # root_checker
+            
+    fi #end if statement for help checker
+}
+
+log_checker(){
+    if [[ $help == '--change_log' ]]
+    then
+        echo "Please enter a log file path:"
+        read new_path
+        touch $new_path
+        log_path=$new_path
+        echo "Log path changed to : $log_path"
+        main_menu
+    else
+        main_menu
+    fi
+
+}
 
 #accept stdin and echo with date: stdin
 predate(){
@@ -15,17 +67,18 @@ predate(){
 
 #Displays the main menu to prompt for delay addition/removal
 main_menu(){
-    echo "****************************************************************"
+    echo "*****************************************************************************************"
     echo "Select an option and press "enter":" 
     echo "1) Add delay to a network"
     echo "2) Remove delay from a network"
     echo "3) Display existing latency"
-    echo "****************************************************************"
+    echo "*****************************************************************************************"
     echo "*Run script as ./traffic_control.sh --help for more information*" 
-    echo "****************************************************************"
-    read delay_answer
-    echo "****************************************************************"
-    case "$delay_answer" in
+    echo "*Run script as ./traffic_control.sh --change_log to temporarily change the log path file*" 
+    echo "*****************************************************************************************"
+    read main_answer
+    echo "*****************************************************************************************"
+    case "$main_answer" in
         1) add_delay
         ;;
         2) remove_delay
@@ -55,23 +108,21 @@ add_delay(){
         then
             tc qdisc del dev $interface root 2>&1 | predate
             echo "Previous latency on interface $interface has been removed."
-        else 
-            echo "No previous latency on interface $interface detected"
     fi
 
-    echo "************************************************************************************"
-    echo "*Please wait, adding ${delay}ms delay to $ipaddress on interface $interface        *"
-    echo "************************************************************************************"
+    echo "**************************************************************************************************************"
+    echo "*    Please wait, adding ${delay}ms delay with ${loss}% packet loss to $ipaddress on interface $interface    *"
+    echo "**************************************************************************************************************"
 
     tc qdisc add dev $interface root handle 1: prio 2>&1 | predate
 
     tc filter add dev $interface parent 1:0 protocol ip pref 55 handle ::55 u32 match ip src ${ipaddress} flowid 2:1 2>&1 | predate
-    
+    #check if the delay field is a range by checking if there a space present in the string
     if [[ $delay =~ [[:space:]] ]]
+        #if the delay field has spaces, hit here
         then 
             first=$(echo $delay | cut -d \  -f 1)
             second=$(echo $delay | cut -d \  -f 2)
-            
             lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${first}ms ${second}ms loss ${loss} 2>&1)
                 #Check if the previous command succeeded
                 if [[ $? -eq 0 ]]; 
@@ -86,6 +137,7 @@ add_delay(){
                     echo "Delay failed. Please see $log_path for more information."
                     echo ""
                 fi
+        #if the delay field is 
         else
             lastcommand=$(tc qdisc add dev $interface parent 1:1 handle 2: netem delay ${delay}ms loss ${loss} 2>&1)
                 #Check if the previous command succeeded
@@ -103,6 +155,10 @@ add_delay(){
                 fi
     fi
 }
+
+# new_display_latency(){
+#     tc filter show dev eth4 parent 1:0
+# }
 
 #Display any existing latency on any interfaces
 display_latency(){
@@ -156,28 +212,6 @@ remove_delay(){
 
 }
 
-#Check if the --help flag is passed as an arguement
-#Then check for sudo..if no sudo, program will exit. If sudo is good, program will display main menu.
-help_checker(){
-    if [[ $help == '--help' ]] 
-        then
-        #Display Help page
-            echo ""
-            echo "Run the program with no arguements to enter the main menu. Root privilege is required to add or remove delay."
-            echo ""
-            echo "Log file: $log_path"
-            echo ""
-        else
-        #Check for sudo user
-            if (( $(id -u) == 0 )); then
-                main_menu
-            else
-                echo "This script runs commands which require root privileges"
-                echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
-                exit 1
-            fi
-            # root_checker 
-    fi #end if statement for help checker
-}
+
 
 help_checker
