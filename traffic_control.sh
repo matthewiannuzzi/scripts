@@ -1,6 +1,5 @@
 #!/bin/bash
-#v3.1- Added ability to temporarily change the log path. Checker to make sure tc is installed. Code & logic clean up
-
+#v3.2- Changes made to invalid sudo user logging
 
 help=$1
 
@@ -37,6 +36,7 @@ sudo_checker(){
             tc_checker
         else
             echo "This script runs commands which require root privileges"
+            echo "Sorry, `whoami` is not a valid sudo user"
             echo "INVALID SUDO USER: `whoami`" | predate >> $log_path
             exit 1
     fi
