@@ -1,5 +1,5 @@
 #!/bin/bash
-#v3.2- Changes made to invalid sudo user logging
+#v3.3- version bump
 
 help=$1
 
@@ -43,7 +43,6 @@ sudo_checker(){
 }
 
 tc_checker(){
-    which tc
     if [[ $? -eq 1 ]]
         then
             echo "You must have the 'tc' qutility installed on your machine to run this command"
